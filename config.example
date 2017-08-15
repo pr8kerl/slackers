@@ -1,0 +1,21 @@
+[ldap]
+host = <server name or IP>
+#port = 389 # for non ssl and 636 for ssl
+port = 636
+tls = true
+# set InsecureSkipVerify to true for testing, to accept the certificate without any verification.
+tls_skip_verify = false
+tls_server_name = <common name of server certificate>
+#CRTValidFor will not be honored if tls_skip_verify is set to true.
+#Page the result size to prevent possible OOM error and crash
+result_page_size = 500
+username = <ldap bind username>
+password = <ldap bind password>
+basedn = <base DN to search at>
+#Attributes required to be pulled
+attributes = mail, samAccountName, memberOf, dn, o, uid, objectclass, cn, displayName, member, userAccountControl, distinguishedName
+#ldap filter - disabled users
+filter = (&(objectCategory=Person)(sAMAccountName=*)(UserAccountControl:1.2.840.113556.1.4.803:=2))
+
+[slack]
+api_token = <legacy api token>
