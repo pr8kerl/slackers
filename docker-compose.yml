@@ -4,6 +4,11 @@ base:
     - .:/go/src/github.com/pr8kerl/lusers
   working_dir: /go/src/github.com/pr8kerl/lusers
 
+glide:
+  extends:
+    service: base
+  entrypoint: glide
+
 console:
   extends:
     service: base

@@ -1,4 +1,4 @@
-GOPATH := /go
+GOPATH ?= /go
 GOBIN  := $(GOPATH)/bin
 PATH   := $(GOROOT)/bin:$(PATH)
 
