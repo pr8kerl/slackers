@@ -10,7 +10,7 @@ deps: $(DEPS)
 
 fmt:
 	GOPATH=$(GOPATH) go fmt $(glide novendor)
-	GOPATH=$(GOPATH) go tool vet *.go f5/*.go
+	GOPATH=$(GOPATH) go tool vet *.go
 
 test: deps
 		GOPATH=$(GOPATH) go test -v $(shell glide novendor)
