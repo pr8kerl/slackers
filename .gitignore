@@ -5,6 +5,7 @@
 # Don't ignore .gitignore and *.foo files
 !.gitignore
 !*.go
+!Gopkg.*
 src
 pkg
 vendor

@@ -1,16 +1,6 @@
-# ops-topiarist
+# manage users from an LDAP source
 
-Formerly `luser`, It manages users from an LDAP source: Search for disabled AD/LDAP user accounts, then look for same/similar accounts in...
-* Slack
+Search for disabled AD?LDAP user accounts, then look for same/similar accounts in...
+* slack
 * Github
 
-## Getting Started
-`./luser scan`
-
-## Installing
-
-## CI/CD setup
-
-## Custodian
-
-The Platform Enablement tribe #tr-platform-enable
