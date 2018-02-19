@@ -1,12 +1,22 @@
 package main
 
 import (
+	"errors"
+	"io/ioutil"
+	"net/http"
+	"os"
+
 	"github.com/nlopes/slack"
-	"gopkg.in/ini.v1"
 )
 
 type SlackRunner struct {
 	token string
+}
+
+type slackResponse struct {
+	Status string
+	Header http.Header
+	Body   string
 }
 
 func (s *SlackRunner) Scan() (map[string]slack.User, error) {
@@ -27,12 +37,39 @@ func (s *SlackRunner) Scan() (map[string]slack.User, error) {
 	return active, nil
 }
 
-func NewSlackRunner(cfg *ini.Section) (*SlackRunner, error) {
-	token, err := cfg.GetKey("api_token")
+func (s *SlackRunner) DeleteUser(u *slack.User) (*slackResponse, error) {
+
+	url := "https://api.slack.com/scim/v1/Users/"
+	url += u.ID
+	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		return nil, err
 	}
+	bearer := "Bearer " + s.token
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Authorization", bearer)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	return &slackResponse{
+		Status: resp.Status,
+		Header: resp.Header,
+		Body:   string(body),
+	}, nil
+}
+
+func NewSlackRunner() (*SlackRunner, error) {
+	token := os.Getenv("SLACK_API_TOKEN")
+	if token == "" {
+		return nil, errors.New("missing SLACK_API_TOKEN environment variable")
+	}
 	return &SlackRunner{
-		token: token.Value(),
+		token: token,
 	}, nil
 }

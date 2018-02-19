@@ -13,9 +13,8 @@ username = <ldap bind username>
 password = <ldap bind password>
 basedn = <base DN to search at>
 #Attributes required to be pulled
-attributes = mail, samAccountName, memberOf, dn, o, uid, objectclass, cn, displayName, member, userAccountControl, distinguishedName
+attributes = mail, samAccountName, memberOf, dn, o, uid, objectclass, cn, displayName, member, userAccountControl, distinguishedName, department, division
 #ldap filter - disabled users
-filter = (&(objectCategory=Person)(sAMAccountName=*)(UserAccountControl:1.2.840.113556.1.4.803:=2))
-
-[slack]
-api_token = <legacy api token>
+disabledFilter = (&(objectCategory=Person)(sAMAccountName=*)(UserAccountControl:1.2.840.113556.1.4.803:=2))
+#ldap filter - active users
+activeFilter = (&(objectCategory=Person)(sAMAccountName=*)(!(UserAccountControl:1.2.840.113556.1.4.803:=2)))

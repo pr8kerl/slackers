@@ -1,19 +1,19 @@
 GOPATH ?= /go
 GOBIN  := $(GOPATH)/bin
 PATH   := $(GOROOT)/bin:$(PATH)
-PROJ := lusers
+PROJ := slackers
 
 all: deps fmt test $(PROJ)
 
 deps: $(DEPS)
-	GOPATH=$(GOPATH) glide install
+	GOPATH=$(GOPATH) dep ensure
 
 fmt:
 	GOPATH=$(GOPATH) go fmt $(glide novendor)
 	GOPATH=$(GOPATH) go tool vet *.go
 
 test: deps
-		GOPATH=$(GOPATH) go test -v $(shell glide novendor)
+		GOPATH=$(GOPATH) go test -v $(glide novendor)
 
 $(PROJ): deps 
 	GOPATH=$(GOPATH) go build $(LDFLAGS) -o $@ -v $(glide novendor)
@@ -34,5 +34,5 @@ darwin: deps
 .PHONY: $(DEPS) clean
 
 clean:
-		rm -rf lusers lusers-win-amd64.exe lusers-linux-amd64.bin .glide vendor
+		rm -rf slackers slackers-win-amd64.exe slackers-linux-amd64.bin vendor
 

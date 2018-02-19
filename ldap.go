@@ -2,30 +2,36 @@ package main
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
+	"os"
+
 	"gopkg.in/ini.v1"
 	"gopkg.in/ldap.v2"
 )
 
 type LDAPUser struct {
-	DN    string
-	CN    string
-	Email string
+	DN         string
+	CN         string
+	Email      string
+	Department string
+	Division   string
 }
 
 type LdapRunner struct {
-	Host          string
-	Port          uint
-	Tls           bool
-	TlsSkipVerify bool
-	TlsServerName string
-	Username      string
-	Password      string
-	BaseDn        string
-	connection    *ldap.Conn
-	Attributes    []string
-	Filter        string
-	PageSize      uint
+	Host           string
+	Port           uint
+	Tls            bool
+	TlsSkipVerify  bool
+	TlsServerName  string
+	Username       string
+	Password       string
+	BaseDn         string
+	connection     *ldap.Conn
+	Attributes     []string
+	ActiveFilter   string
+	DisabledFilter string
+	PageSize       uint
 }
 
 func (r *LdapRunner) connect() error {
@@ -78,7 +84,27 @@ func (r *LdapRunner) close() {
 	}
 }
 
-func (r *LdapRunner) Scan() ([]LDAPUser, error) {
+func (r *LdapRunner) ScanForDisabledUsers() ([]LDAPUser, error) {
+	searchRequest := ldap.NewSearchRequest(
+		r.BaseDn,
+		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+		r.DisabledFilter, r.Attributes,
+		nil,
+	)
+	return r.Scan(searchRequest)
+}
+
+func (r *LdapRunner) ScanForActiveUsers() ([]LDAPUser, error) {
+	searchRequest := ldap.NewSearchRequest(
+		r.BaseDn,
+		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+		r.ActiveFilter, r.Attributes,
+		nil,
+	)
+	return r.Scan(searchRequest)
+}
+
+func (r *LdapRunner) Scan(searchRequest *ldap.SearchRequest) ([]LDAPUser, error) {
 
 	err := r.connect()
 	if err != nil {
@@ -86,14 +112,7 @@ func (r *LdapRunner) Scan() ([]LDAPUser, error) {
 	}
 	defer r.close()
 
-	users := make([]LDAPUser, 0, 100)
-	// Search for the given username
-	searchRequest := ldap.NewSearchRequest(
-		r.BaseDn,
-		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
-		r.Filter, r.Attributes,
-		nil,
-	)
+	users := make([]LDAPUser, 0, 1000)
 	sr, err := r.connection.SearchWithPaging(searchRequest, uint32(r.PageSize))
 	if err != nil {
 		return nil, err
@@ -102,12 +121,14 @@ func (r *LdapRunner) Scan() ([]LDAPUser, error) {
 	for _, entry := range sr.Entries {
 		//fmt.Printf("%v: %v\n", entry.GetAttributeValue("cn"), entry.GetAttributeValue("mail"))
 		users = append(users, LDAPUser{
-			DN:    entry.DN,
-			CN:    entry.GetAttributeValue("cn"),
-			Email: entry.GetAttributeValue("mail"),
+			DN:         entry.DN,
+			CN:         entry.GetAttributeValue("cn"),
+			Email:      entry.GetAttributeValue("mail"),
+			Department: entry.GetAttributeValue("department"),
+			Division:   entry.GetAttributeValue("division"),
 		})
-		// entry.PrettyPrint(4)
-		// fmt.Printf("%v\n", pretty.Formatter(entry))
+		//entry.PrettyPrint(4)
+		//fmt.Printf("%v\n", pretty.Formatter(entry))
 	}
 
 	return users, nil
@@ -115,6 +136,10 @@ func (r *LdapRunner) Scan() ([]LDAPUser, error) {
 }
 
 func NewLdapRunner(cfg *ini.Section) (*LdapRunner, error) {
+	password := os.Getenv("LDAP_PASSWD")
+	if password == "" {
+		return nil, errors.New("missing LDAP_PASSWD environment variable")
+	}
 	host, err := cfg.GetKey("host")
 	if err != nil {
 		return nil, err
@@ -127,10 +152,6 @@ func NewLdapRunner(cfg *ini.Section) (*LdapRunner, error) {
 	if err != nil {
 		return nil, err
 	}
-	password, err := cfg.GetKey("password")
-	if err != nil {
-		return nil, err
-	}
 	basedn, err := cfg.GetKey("basedn")
 	if err != nil {
 		return nil, err
@@ -139,7 +160,11 @@ func NewLdapRunner(cfg *ini.Section) (*LdapRunner, error) {
 	if err != nil {
 		return nil, err
 	}
-	filter, err := cfg.GetKey("filter")
+	activeFilter, err := cfg.GetKey("activeFilter")
+	if err != nil {
+		return nil, err
+	}
+	disabledFilter, err := cfg.GetKey("disabledFilter")
 	if err != nil {
 		return nil, err
 	}
@@ -160,18 +185,19 @@ func NewLdapRunner(cfg *ini.Section) (*LdapRunner, error) {
 		return nil, err
 	}
 	return &LdapRunner{
-		Host:          host.Value(),
-		Port:          port,
-		Tls:           tlsFlag,
-		TlsSkipVerify: tlsSkipVerify,
-		TlsServerName: tlsServerName.Value(),
-		Username:      username.Value(),
-		Password:      password.Value(),
-		BaseDn:        basedn.Value(),
-		connection:    nil,
-		Attributes:    attr.Strings(","),
-		Filter:        filter.Value(),
-		PageSize:      pagesz,
+		Host:           host.Value(),
+		Port:           port,
+		Tls:            tlsFlag,
+		TlsSkipVerify:  tlsSkipVerify,
+		TlsServerName:  tlsServerName.Value(),
+		Username:       username.Value(),
+		Password:       password,
+		BaseDn:         basedn.Value(),
+		connection:     nil,
+		Attributes:     attr.Strings(","),
+		ActiveFilter:   activeFilter.Value(),
+		DisabledFilter: disabledFilter.Value(),
+		PageSize:       pagesz,
 	}, nil
 }
 

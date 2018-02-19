@@ -1,21 +1,27 @@
-base:
-  build: .
-  volumes:
-    - .:/go/src/github.com/pr8kerl/lusers
-  working_dir: /go/src/github.com/pr8kerl/lusers
+---
+version: '3'
 
-glide:
-  extends:
-    service: base
-  entrypoint: glide
+services:
+  base: &base
+    build:
+      context: .
+      dockerfile: Dockerfile.build
+    volumes:
+      - .:/go/src/github.com/pr8kerl/lusers
+    working_dir: /go/src/github.com/pr8kerl/lusers
+    entrypoint: make 
 
-console:
-  extends:
-    service: base
-  entrypoint: bash
+  lusers:
+    build: .
+    volumes:
+      - .:/go/src/github.com/pr8kerl/lusers
 
-make:
-  extends:
-    service: base
-  entrypoint: make 
+  make:
+    <<: *base
+    environment:
+      - GITHUB_TOKEN
+      - TRAVIS_TAG
 
+  dep:
+    <<: *base
+    entrypoint: dep 

@@ -2,17 +2,19 @@ package main
 
 import (
 	"fmt"
-	"github.com/mitchellh/cli"
 	"os"
+
+	"github.com/mitchellh/cli"
 )
 
 func main() {
 
-	c := cli.NewCLI("lusermgr", "0.0.1")
+	c := cli.NewCLI("slackers", "0.1.0")
 	c.Args = os.Args[1:]
 
 	c.Commands = map[string]cli.CommandFactory{
-		"scan": scanUsersCmdFactory,
+		"disabled": disabledUsersCmdFactory,
+		"report":   reportUsersCmdFactory,
 	}
 
 	exitStatus, err := c.Run()
