@@ -1,8 +1,0 @@
-package: .
-import:
-- package: github.com/mitchellh/cli
-- package: gopkg.in/ini.v1
-  version: ^1.28.0
-- package: gopkg.in/ldap.v2
-  version: ^2.5.0
-- package: github.com/nlopes/slack
