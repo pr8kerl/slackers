@@ -19,7 +19,7 @@ docker-compose run make
   LDAP_PASSWD=SuperSecretSquirrel1
 
   export SLACK_API_TOKEN LDAP_PASSWD
-```
+  ```
 
 ## run
 
