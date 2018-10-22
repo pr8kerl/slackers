@@ -2,19 +2,22 @@
 version: '3'
 
 services:
+
   base: &base
-    build: .
+    image: pr8kerl/gobuilder:1.10
     volumes:
       - .:/go/src/github.com/pr8kerl/slackers
     working_dir: /go/src/github.com/pr8kerl/slackers
-    entrypoint: make 
+
+  slackers:
+    build: .
+    volumes:
+      - ./config.ini:/config.ini
+    entrypoint: /slackers 
+    environment:
+      - SLACK_API_TOKEN
+      - LDAP_PASSWD
 
   make:
     <<: *base
-    environment:
-      - GITHUB_TOKEN
-      - TRAVIS_TAG
-
-  dep:
-    <<: *base
-    entrypoint: dep 
+    entrypoint: make 

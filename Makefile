@@ -9,26 +9,26 @@ deps: $(DEPS)
 	GOPATH=$(GOPATH) dep ensure
 
 fmt:
-	GOPATH=$(GOPATH) go fmt $(glide novendor)
+	GOPATH=$(GOPATH) go fmt *.go
 	GOPATH=$(GOPATH) go tool vet *.go
 
 test: deps
-		GOPATH=$(GOPATH) go test -v $(glide novendor)
+		GOPATH=$(GOPATH) go test -v 
 
 $(PROJ): deps 
-	GOPATH=$(GOPATH) go build $(LDFLAGS) -o $@ -v $(glide novendor)
+	CGO_ENABLED=0 GOPATH=$(GOPATH) go build -a $(LDFLAGS) -o $@ -v *.go
 	touch $@ && chmod 755 $@
 
 linux: deps
-	GOOS=linux GOARCH=amd64 GOPATH=$(GOPATH) go build $(LDFLAGS) -o $(PROJ)-linux-amd64 -v $(glide novendor)
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOPATH=$(GOPATH) go build -a $(LDFLAGS) -o $(PROJ)-linux-amd64 -v *.go
 	touch $(PROJ)-linux-amd64 && chmod 755 $(PROJ)-linux-amd64
 
 windows: deps
-	GOOS=windows GOARCH=amd64 GOPATH=$(GOPATH) go build $(LDFLAGS) -o $(PROJ)-windows-amd64.exe -v $(glide novendor)
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 GOPATH=$(GOPATH) go build -a $(LDFLAGS) -o $(PROJ)-windows-amd64.exe -v *.go
 	touch $(PROJ)-windows-amd64.exe
 
 darwin: deps
-	GOOS=darwin GOARCH=amd64 GOPATH=$(GOPATH) go build -o $(PROJ)-darwin-amd64 -v $(glide novendor)
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 GOPATH=$(GOPATH) go build -o -a $(PROJ)-darwin-amd64 -v *.go
 	touch $(PROJ)-darwin-amd64 && chmod 755 $(PROJ)-darwin-amd64
 
 .PHONY: $(DEPS) clean
