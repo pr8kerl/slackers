@@ -28,7 +28,7 @@ windows: deps
 	touch $(PROJ)-windows-amd64.exe
 
 darwin: deps
-	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 GOPATH=$(GOPATH) go build -o -a $(PROJ)-darwin-amd64 -v *.go
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 GOPATH=$(GOPATH) go build -a $(LDFLAGS) -o $(PROJ)-darwin-amd64 -v *.go
 	touch $(PROJ)-darwin-amd64 && chmod 755 $(PROJ)-darwin-amd64
 
 .PHONY: $(DEPS) clean
