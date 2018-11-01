@@ -1,18 +1,20 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/mitchellh/cli"
-	//	"sync"
+	"github.com/nlopes/slack"
 )
 
 type DisabledUsersCommand struct {
-	Purge bool
-	Ui    cli.Ui
+	Purge        bool
+	OutputFormat string
+	Ui           cli.Ui
 }
 
 func disabledUsersCmdFactory() (cli.Command, error) {
@@ -24,8 +26,9 @@ func disabledUsersCmdFactory() (cli.Command, error) {
 	}
 
 	return &DisabledUsersCommand{
-		Purge: false,
-		Ui:    ui,
+		Purge:        false,
+		OutputFormat: "stdout",
+		Ui:           ui,
 	}, nil
 }
 
@@ -33,6 +36,7 @@ func (c *DisabledUsersCommand) Run(args []string) int {
 
 	cmdFlags := flag.NewFlagSet("disabled", flag.ContinueOnError)
 	cmdFlags.BoolVar(&c.Purge, "purge", false, "deactivate live slackers that are disabled in AD")
+	cmdFlags.StringVar(&c.OutputFormat, "o", "stdout", "desired output format")
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()); os.Exit(1) }
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
@@ -56,9 +60,6 @@ func (c *DisabledUsersCommand) Run(args []string) int {
 		fmt.Printf("error scanning for ldap users: %s\n", err)
 		os.Exit(1)
 	}
-	// for _, u := range lusers {
-	// 	fmt.Printf("ldap: %s,%s\n", u.CN, u.Email)
-	// }
 
 	srunner, err := NewSlackRunner()
 	if err != nil {
@@ -72,16 +73,24 @@ func (c *DisabledUsersCommand) Run(args []string) int {
 		fmt.Printf("error scanning for slack users: %s\n", err)
 		os.Exit(1)
 	}
+	// stack for targeted users
+	var tusers []slack.User
 
 	for _, u := range lusers {
 		for _, v := range susers {
 			if v.Name == "slackbot" {
 				continue
 			}
+			if v.IsBot == true {
+				continue
+			}
 			if strings.EqualFold(u.Email, v.Profile.Email) {
-				// if u.Email == v.Profile.Email {
-				fmt.Printf("warning: found a live slacker that should be dead: %s,%s,%s\n", v.Name, v.Profile.Email, v.ID)
-
+				if c.OutputFormat == "stdout" {
+					fmt.Printf("warning: found a live slacker that should be dead: %s,%s,%s\n", v.Name, v.Profile.Email, v.ID)
+				}
+				if c.OutputFormat == "json" {
+					tusers = append(tusers, v)
+				}
 				if c.Purge {
 					resp, err := srunner.DeleteUser(&v)
 					if err != nil {
@@ -92,7 +101,10 @@ func (c *DisabledUsersCommand) Run(args []string) int {
 			}
 		}
 	}
-
+	if c.OutputFormat == "json" {
+		js, _ := json.Marshal(tusers)
+		fmt.Println(string(js))
+	}
 	return 0
 }
 
@@ -102,7 +114,7 @@ func (c *DisabledUsersCommand) Help() string {
 List all disabled AD users that are live slackers
 
 Options:
-            -purge          deactivate live slackers that are deactive in AD
+            -purge          deactivate live slackers that are deactived in AD
 
 
 	`

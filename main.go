@@ -9,7 +9,7 @@ import (
 
 func main() {
 
-	c := cli.NewCLI("slackers", "0.1.0")
+	c := cli.NewCLI("slackers", "0.1.1")
 	c.Args = os.Args[1:]
 
 	c.Commands = map[string]cli.CommandFactory{
